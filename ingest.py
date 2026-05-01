@@ -1,7 +1,7 @@
 """Ingestion module for building vector index from corpus."""
 import json
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 import numpy as np
 import pandas as pd
 
@@ -62,7 +62,7 @@ def load_corpus_from_file(corpus_path: str) -> List[Dict[str, Any]]:
         raise ValueError(f"Unsupported file format: {corpus_path}. Use .csv or .json")
 
 
-def ingest_corpus(corpus_path: str, config: Dict[str, Any], output_dir: str = '.') -> None:
+def ingest_corpus(corpus_path: str, config: Dict[str, Any] = None, output_dir: str = '.') -> None:
     """
     Load corpus and build FAISS vector index.
     
@@ -73,6 +73,11 @@ def ingest_corpus(corpus_path: str, config: Dict[str, Any], output_dir: str = '.
         config: Configuration dict with model settings
         output_dir: Directory to save index and metadata
     """
+    if config is None:
+        config = {
+            'embedding_model': 'all-MiniLM-L6-v2'
+        }
+    
     if not os.path.exists(corpus_path):
         print(f"Corpus file not found: {corpus_path}")
         return
@@ -135,3 +140,22 @@ def ingest_corpus(corpus_path: str, config: Dict[str, Any], output_dir: str = '.
     
     print(f"Index built with {len(documents)} documents")
     print(f"Saved to {output_dir}/")
+
+
+def ingest(corpus_path: str, config: Dict[str, Any] = None, output_dir: str = '.') -> Tuple[bool, str]:
+    """
+    Wrapper function for ingestion that returns success/error tuple.
+    
+    Args:
+        corpus_path: Path to corpus file
+        config: Configuration dict
+        output_dir: Output directory
+        
+    Returns:
+        Tuple of (success: bool, message: str)
+    """
+    try:
+        ingest_corpus(corpus_path, config, output_dir)
+        return True, f"Successfully ingested corpus from {corpus_path}"
+    except Exception as e:
+        return False, f"Error ingesting corpus: {str(e)}"
